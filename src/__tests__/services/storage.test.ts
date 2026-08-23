@@ -100,7 +100,7 @@ describe('storage availability errors', () => {
   });
 
   it('surfaces quota failures as StorageError', () => {
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('quota exceeded', 'QuotaExceededError');
     });
     expect(() => saveState(validState)).toThrow(/Failed to persist state/);
