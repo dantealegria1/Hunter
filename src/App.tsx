@@ -1,122 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+/**
+ * Hunter dashboard: wires the three views together and owns persisted state.
+ *
+ * State flows: BacklogManager edits the backlog, DealRadar can push deals
+ * into it, and RoadmapTimeline renders the plan derived from backlog +
+ * settings. Every mutation is persisted to localStorage via storage.ts.
+ */
 
-function App() {
-  const [count, setCount] = useState(0)
+import { useCallback, useMemo, useState } from 'react';
+import BacklogManager from './components/BacklogManager';
+import DealRadar from './components/DealRadar';
+import RoadmapTimeline from './components/RoadmapTimeline';
+import type { BacklogEntry } from './services/planner';
+import { buildPlayPlan } from './services/planner';
+import type { AppState } from './services/storage';
+import { loadState, saveState } from './services/storage';
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function initialState(): AppState {
+  try {
+    return loadState();
+  } catch {
+    // Storage unavailable (blocked/private mode): run in-memory.
+    return { entries: [], settings: { weeklyHours: 10 } };
+  }
 }
 
-export default App
+export default function App() {
+  const [state, setState] = useState<AppState>(initialState);
+
+  const persist = useCallback((next: AppState) => {
+    setState(next);
+    try {
+      saveState(next);
+    } catch {
+      // Persistence failure must not lose the in-memory update; the user
+      // simply won't have this change after a reload.
+    }
+  }, []);
+
+  const handleAdd = useCallback(
+    (entry: BacklogEntry) => {
+      if (state.entries.some((e) => e.id === entry.id)) return;
+      persist({ ...state, entries: [...state.entries, entry] });
+    },
+    [state, persist],
+  );
+
+  const handleRemove = useCallback(
+    (id: string) => {
+      persist({ ...state, entries: state.entries.filter((e) => e.id !== id) });
+    },
+    [state, persist],
+  );
+
+  const plan = useMemo(() => buildPlayPlan(state.entries, state.settings.weeklyHours), [state]);
+
+  return (
+    <main className="mx-auto max-w-4xl space-y-6 p-6">
+      <header>
+        <h1 className="text-2xl font-bold text-slate-900">Hunter</h1>
+        <p className="text-sm text-slate-500">
+          Track your game backlog, plan your playtime, and catch good deals.
+        </p>
+      </header>
+
+      <BacklogManager entries={state.entries} onAdd={handleAdd} onRemove={handleRemove} />
+      <RoadmapTimeline plan={plan} />
+      <DealRadar onAddToBacklog={handleAdd} />
+    </main>
+  );
+}
