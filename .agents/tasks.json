@@ -23,5 +23,10 @@
     "id": "TASK-05",
     "title": "UI components and dashboard integration",
     "scope": "Build BacklogManager, RoadmapTimeline, and DealRadar views."
+  },
+  {
+    "id": "TASK-06",
+    "title": "CI/CD pipeline and GitHub Pages configuration",
+    "scope": "Set base path in vite.config.ts, create .github/workflows/deploy.yml, verify local build artifact path, and push CI configuration."
   }
 ]
