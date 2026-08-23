@@ -1,0 +1,27 @@
+[
+  {
+    "id": "TASK-01",
+    "title": "Project scaffolding and Vitest setup",
+    "scope": "Initialize Vite + React + TypeScript + Tailwind CSS and configure Vitest."
+  },
+  {
+    "id": "TASK-02",
+    "title": "CheapShark API client and unit tests",
+    "scope": "Implement src/services/cheapshark.ts and corresponding mock tests."
+  },
+  {
+    "id": "TASK-03",
+    "title": "Backlog calculation engine and planner tests",
+    "scope": "Implement src/services/planner.ts and unit tests for time distribution."
+  },
+  {
+    "id": "TASK-04",
+    "title": "LocalStorage state manager and persistence tests",
+    "scope": "Implement src/services/storage.ts with JSON import/export and error handling."
+  },
+  {
+    "id": "TASK-05",
+    "title": "UI components and dashboard integration",
+    "scope": "Build BacklogManager, RoadmapTimeline, and DealRadar views."
+  }
+]
