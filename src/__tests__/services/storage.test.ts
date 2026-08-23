@@ -100,9 +100,11 @@ describe('storage availability errors', () => {
   });
 
   it('surfaces quota failures as StorageError', () => {
-    // jsdom defines storage methods as own properties of the instance,
-    // so spy on the instance rather than Storage.prototype.
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+    const storageTarget: Storage =
+      Object.getOwnPropertyDescriptor(window.localStorage, 'setItem') !== undefined
+        ? window.localStorage
+        : (Object.getPrototypeOf(window.localStorage) as Storage);
+    vi.spyOn(storageTarget, 'setItem').mockImplementation(() => {
       throw new DOMException('quota exceeded', 'QuotaExceededError');
     });
     expect(() => saveState(validState)).toThrow(/Failed to persist state/);
