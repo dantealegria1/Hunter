@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import App from '../App'
 import { STORAGE_KEY } from '../services/storage'
 import * as cheapshark from '../services/cheapshark'
@@ -41,7 +41,10 @@ describe('App dashboard integration', () => {
 
   it('renders all three views', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { name: /hunter/i })).toBeInTheDocument()
+    // The retro ads sidebar also mentions "Hunter" (arcade banner), so
+    // scope the heading query to the app header.
+    const header = screen.getByRole('banner')
+    expect(within(header).getByRole('heading', { name: /hunter/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /backlog/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Roadmap' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /deal radar/i })).toBeInTheDocument()
@@ -70,8 +73,10 @@ describe('App dashboard integration', () => {
 
   it('adding a deal from DealRadar inserts it into the shared backlog', async () => {
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Hades')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Add Hades to backlog' }))
+    // The retro ads sidebar also lists deals, so scope to the Deal Radar region.
+    const dealRadar = within(screen.getByRole('region', { name: /deal radar/i }))
+    await waitFor(() => expect(dealRadar.getByText('Hades')).toBeInTheDocument())
+    fireEvent.click(dealRadar.getByRole('button', { name: 'Add Hades to backlog' }))
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
 
@@ -82,8 +87,10 @@ describe('App dashboard integration', () => {
 
   it('does not duplicate an entry when adding the same deal twice', async () => {
     render(<App />)
-    await waitFor(() => expect(screen.getByText('Portal')).toBeInTheDocument())
-    const button = screen.getByRole('button', { name: 'Add Portal to backlog' })
+    // Scope to the Deal Radar region: the ads sidebar may repeat deal titles.
+    const dealRadar = within(screen.getByRole('region', { name: /deal radar/i }))
+    await waitFor(() => expect(dealRadar.getByText('Portal')).toBeInTheDocument())
+    const button = dealRadar.getByRole('button', { name: 'Add Portal to backlog' })
     fireEvent.click(button)
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
@@ -115,6 +122,11 @@ describe('App dashboard integration', () => {
     vi.restoreAllMocks()
     vi.spyOn(cheapshark, 'getDeals').mockRejectedValue(new cheapshark.CheapSharkError('API unavailable'))
     render(<App />)
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('API unavailable'))
+    // Both DealRadar and the retro ads sidebar surface deal errors; assert
+    // that at least one alert carries the failure message.
+    await waitFor(() => {
+      const alerts = screen.getAllByRole('alert')
+      expect(alerts.some((el) => el.textContent?.includes('API unavailable'))).toBe(true)
+    })
   })
 })

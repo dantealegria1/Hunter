@@ -9,6 +9,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import BacklogManager from './components/BacklogManager';
 import DealRadar from './components/DealRadar';
+import GameCodex from './components/GameCodex';
+import RetroAdsSidebar from './components/RetroAdsSidebar';
 import RoadmapTimeline from './components/RoadmapTimeline';
 import type { BacklogEntry } from './services/planner';
 import { buildPlayPlan } from './services/planner';
@@ -92,9 +94,16 @@ export default function App() {
 
   const plan = useMemo(() => buildPlayPlan(state.entries, state.settings.weeklyHours), [state]);
 
+  // Sidebar drawer visibility. Only relevant under the xl breakpoint
+  // (>1280px shows both sidebars permanently). Toggling a drawer does
+  // not affect the grid columns (they are fixed tracks), so there is
+  // no layout shift in the center column.
+  const [codexOpen, setCodexOpen] = useState(false);
+  const [adsOpen, setAdsOpen] = useState(false);
+
   return (
     <div className="theme-transition min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <main className="mx-auto max-w-4xl space-y-6 p-6">
+      <div className="mx-auto max-w-[1600px] px-4 py-6">
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent dark:from-indigo-400 dark:to-violet-400">
@@ -115,10 +124,60 @@ export default function App() {
           </button>
         </header>
 
-        <BacklogManager entries={state.entries} onAdd={handleAdd} onRemove={handleRemove} />
-        <RoadmapTimeline plan={plan} />
-        <DealRadar onAddToBacklog={handleAdd} />
-      </main>
+        {/* Mobile/tablet drawer toggles — hidden on wide screens where both
+            sidebars are always visible. */}
+        <div className="mt-4 flex gap-2 xl:hidden" role="group" aria-label="Sidebar toggles">
+          <button
+            type="button"
+            onClick={() => {
+              setCodexOpen((open) => !open);
+              setAdsOpen(false);
+            }}
+            aria-expanded={codexOpen}
+            aria-controls="codex-panel"
+            className="glass-card flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            📖 Codex {codexOpen ? '▲' : '▼'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAdsOpen((open) => !open);
+              setCodexOpen(false);
+            }}
+            aria-expanded={adsOpen}
+            aria-controls="ads-panel"
+            className="glass-card flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-500 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {'📺 Deals & Ads '}{adsOpen ? '▲' : '▼'}
+          </button>
+        </div>
+
+        {/* Responsive 3-column dashboard.
+            >1280px (xl): Codex | center | Ads, fixed sidebars + fluid center.
+            ≤1280px (lg and below): single column; sidebars render as drawers. */}
+        <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[300px_minmax(0,1fr)_300px] xl:grid-cols-[320px_minmax(0,1fr)_320px]">
+          {/* Left column: Game Codex */}
+          <div
+            id="codex-panel"
+            className={`${codexOpen ? '' : 'hidden '}xl:block`}
+          >
+            <GameCodex onAddToBacklog={handleAdd} />
+          </div>
+
+          {/* Center column: primary views */}
+          <main className="min-w-0 space-y-6">
+            <BacklogManager entries={state.entries} onAdd={handleAdd} onRemove={handleRemove} />
+            <RoadmapTimeline plan={plan} />
+            <DealRadar onAddToBacklog={handleAdd} />
+          </main>
+
+          {/* Right column: retro ads sidebar */}
+          <div id="ads-panel" className={`${adsOpen ? '' : 'hidden '}xl:block`}>
+            <RetroAdsSidebar />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

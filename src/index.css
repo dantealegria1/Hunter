@@ -51,3 +51,46 @@ input[type="range"].slider:focus-visible {
   outline: 2px solid var(--color-indigo-500);
   outline-offset: 2px;
 }
+
+/* ── Retro ads sidebar (TASK-08) ─────────────────────────────────── */
+
+/* Neon arcade banner: pixel border, gradient, CRT scanlines. */
+.retro-banner {
+  @apply border-4 border-fuchsia-400 shadow-[0_0_18px_rgba(217,70,239,0.45)];
+  background: linear-gradient(135deg, #2e1065 0%, #6d28d9 50%, #c026d3 100%);
+}
+.dark .retro-banner {
+  @apply border-fuchsia-500;
+  box-shadow: 0 0 22px rgba(192, 38, 211, 0.55);
+}
+.retro-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.06) 0px,
+    rgb(255 255 255 / 0.06) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+.retro-title {
+  font-family: ui-monospace, "Courier New", monospace;
+  color: #fef08a;
+  text-shadow:
+    0 0 6px #f0abfc,
+    2px 2px 0 #7e22ce;
+}
+
+/* Chunky pixel-art frame around deal thumbnails (pure CSS, no images). */
+.pixel-border {
+  image-rendering: pixelated;
+  box-shadow:
+    0 0 0 2px #f0abfc,
+    3px 3px 0 2px #4c1d95;
+}
+
+/* Discount badge on affiliate deals. */
+.retro-badge {
+  background: linear-gradient(135deg, #facc15, #f97316);
+  color: #431407;
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%, 0 8%);
+}
