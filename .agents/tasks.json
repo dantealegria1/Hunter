@@ -28,5 +28,15 @@
     "id": "TASK-06",
     "title": "CI/CD pipeline and GitHub Pages configuration",
     "scope": "Set base path in vite.config.ts, create .github/workflows/deploy.yml, verify local build artifact path, and push CI configuration."
+  },
+  {
+    "id": "TASK-07",
+    "title": "Duration prompt modal and Codex inspector",
+    "scope": "Implement DurationPromptModal shown before every backlog add (manual entry in BacklogManager and '+ Backlog' in DealRadar), prefilled from known playtime data with a 20h fallback. Implement GameCodex left-sidebar search component querying CheapShark for game metadata (release date, reviews, publisher/synopsis) with debounced input, loading/empty/error states, and an add-to-backlog affordance routed through the duration modal."
+  },
+  {
+    "id": "TASK-08",
+    "title": "3-column dashboard layout and retro ad sidebar",
+    "scope": "Restructure the main view into a responsive CSS Grid 3-column dashboard: GameCodex (left), existing center views (BacklogManager, RoadmapTimeline, DealRadar), RetroAdsSidebar (right). Sidebars collapse to drawers under 1280px and the layout stacks single-column under 768px without layout shift. Build RetroAdsSidebar with 90s-style retro banners, sponsor cards, and affiliate deal highlights (rel=\"sponsored noopener\"), fully styled for light and dark mode."
   }
 ]

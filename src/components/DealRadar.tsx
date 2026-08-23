@@ -13,6 +13,9 @@ import {
 } from '../services/multiStore';
 import type { BacklogEntry } from '../services/planner';
 import { lookupGame, hasRawgApiKey } from '../services/rawg';
+import DurationPromptModal, {
+  DEFAULT_HOURS_TO_BEAT,
+} from './DurationPromptModal';
 import {
   PLATFORM_FILTERS,
   PLATFORM_LABELS,
@@ -125,6 +128,8 @@ export default function DealRadar({ onAddToBacklog, pageSize = 60 }: DealRadarPr
   const [maxPrice, setMaxPrice] = useState('');
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
   const [addingDealID, setAddingDealID] = useState<string | null>(null);
+  /** Deal pending playtime confirmation in the duration modal. */
+  const [pendingDeal, setPendingDeal] = useState<{ deal: UnifiedDeal; initialHours: number } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -195,21 +200,28 @@ export default function DealRadar({ onAddToBacklog, pageSize = 60 }: DealRadarPr
     if (addingDealID !== null) return;
     setAddingDealID(deal.id);
     try {
-      // Enrich with real RAWG playtime + cover art before the entry lands;
-      // on any failure fall back to the previous heuristic defaults.
-      const enrichment = hasRawgApiKey()
-        ? await lookupGame(deal.title).catch(() => null)
-        : null;
-      onAddToBacklog({
-        id: deal.id,
-        title: deal.title,
-        hoursToBeat: enrichment?.estimatedHours ?? 20,
-        priority: priorityForSavings(deal.savingsPercent),
-        ...(enrichment?.coverImage !== undefined ? { coverImage: enrichment.coverImage } : {}),
-      });
+      // Known RAWG playtime prefills the duration prompt; else 20h fallback.
+      let initialHours = DEFAULT_HOURS_TO_BEAT;
+      if (hasRawgApiKey()) {
+        const enrichment = await lookupGame(deal.title).catch(() => null);
+        if (enrichment?.estimatedHours !== undefined) initialHours = enrichment.estimatedHours;
+      }
+      setPendingDeal({ deal, initialHours });
     } finally {
       setAddingDealID(null);
     }
+  }
+
+  function handleConfirmDeal(hours: number): void {
+    if (pendingDeal === null) return;
+    const { deal } = pendingDeal;
+    onAddToBacklog({
+      id: deal.id,
+      title: deal.title,
+      hoursToBeat: hours,
+      priority: priorityForSavings(deal.savingsPercent),
+    });
+    setPendingDeal(null);
   }
 
   return (
@@ -342,6 +354,14 @@ export default function DealRadar({ onAddToBacklog, pageSize = 60 }: DealRadarPr
           )}
         </div>
       )}
+
+      <DurationPromptModal
+        open={pendingDeal !== null}
+        gameTitle={pendingDeal?.deal.title ?? ''}
+        initialHours={pendingDeal?.initialHours ?? DEFAULT_HOURS_TO_BEAT}
+        onConfirm={handleConfirmDeal}
+        onCancel={() => setPendingDeal(null)}
+      />
     </section>
   );
 }

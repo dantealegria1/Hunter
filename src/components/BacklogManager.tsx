@@ -3,12 +3,20 @@
  *
  * Pure presentational component — all state mutations are delegated upward
  * through callbacks so the dashboard owns persistence.
+ *
+ * Every add first routes through DurationPromptModal (docs/spec.md): the
+ * manual entry form collects title/priority and then asks for estimated
+ * playtime, prefilled from known RAWG data or the entered hours, falling
+ * back to 20 hours.
  */
 
 import { useState, type FormEvent } from 'react';
 import type { BacklogEntry, Priority } from '../services/planner';
 import { remainingHours } from '../services/planner';
 import { hasRawgApiKey, lookupGame } from '../services/rawg';
+import DurationPromptModal, {
+  DEFAULT_HOURS_TO_BEAT,
+} from './DurationPromptModal';
 
 const PRIORITIES: readonly Priority[] = ['high', 'medium', 'low'];
 
@@ -16,6 +24,13 @@ interface BacklogManagerProps {
   entries: BacklogEntry[];
   onAdd: (entry: BacklogEntry) => void;
   onRemove: (id: string) => void;
+}
+
+/** Pending add awaiting duration confirmation in the modal. */
+interface PendingAdd {
+  title: string;
+  priority: Priority;
+  initialHours: number;
 }
 
 const PRIORITY_STYLES: Record<Priority, string> = {
@@ -33,6 +48,7 @@ export default function BacklogManager({ entries, onAdd, onRemove }: BacklogMana
   const [priority, setPriority] = useState<Priority>('medium');
   const [error, setError] = useState<string | null>(null);
   const [enriching, setEnriching] = useState(false);
+  const [pendingAdd, setPendingAdd] = useState<PendingAdd | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -42,32 +58,35 @@ export default function BacklogManager({ entries, onAdd, onRemove }: BacklogMana
       setError('Title is required.');
       return;
     }
-    if (hours !== '' && (!Number.isFinite(parsedHours) || parsedHours <= 0)) {
-      setError('Estimated hours must be a positive number.');
-      return;
-    }
     setError(null);
     setEnriching(true);
     try {
-      // Hours left blank → let RAWG supply a real estimate when it can.
-      const enrichment = hasRawgApiKey()
-        ? await lookupGame(trimmed).catch(() => null)
-        : null;
-      onAdd({
-        id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title: trimmed,
-        hoursToBeat:
-          enrichment?.estimatedHours ??
-          (hours !== '' && parsedHours > 0 ? parsedHours : 20),
-        priority,
-        ...(enrichment?.coverImage !== undefined ? { coverImage: enrichment.coverImage } : {}),
-      });
-      setTitle('');
-      setHours('');
-      setPriority('medium');
+      // Known playtime (RAWG) prefills the duration prompt; otherwise fall
+      // back to the hours typed here, or the 20h default.
+      let initialHours = DEFAULT_HOURS_TO_BEAT;
+      if (Number.isFinite(parsedHours) && parsedHours > 0) initialHours = parsedHours;
+      if (hasRawgApiKey()) {
+        const enrichment = await lookupGame(trimmed).catch(() => null);
+        if (enrichment?.estimatedHours !== undefined) initialHours = enrichment.estimatedHours;
+      }
+      setPendingAdd({ title: trimmed, priority, initialHours });
     } finally {
       setEnriching(false);
     }
+  }
+
+  function handleConfirm(confirmedHours: number): void {
+    if (pendingAdd === null) return;
+    onAdd({
+      id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: pendingAdd.title,
+      hoursToBeat: confirmedHours,
+      priority: pendingAdd.priority,
+    });
+    setPendingAdd(null);
+    setTitle('');
+    setHours('');
+    setPriority('medium');
   }
 
   return (
@@ -182,6 +201,14 @@ export default function BacklogManager({ entries, onAdd, onRemove }: BacklogMana
           ))}
         </ul>
       )}
+
+      <DurationPromptModal
+        open={pendingAdd !== null}
+        gameTitle={pendingAdd?.title ?? ''}
+        initialHours={pendingAdd?.initialHours ?? DEFAULT_HOURS_TO_BEAT}
+        onConfirm={handleConfirm}
+        onCancel={() => setPendingAdd(null)}
+      />
     </section>
   );
 }

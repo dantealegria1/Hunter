@@ -154,6 +154,62 @@ export async function searchGames(title: string, limit = 5, signal?: AbortSignal
   })) as GameLookupResult[];
 }
 
+/** Metadata returned by GET /games?id= (single game lookup). */
+export interface GameInfo {
+  info: {
+    title: string;
+    thumb: string;
+    /** Cheapest-ever recorded price. */
+    cheapestPrice?: { price: string; date: string } | null;
+  };
+  /** Per-store current offers; `price`/`retailPrice` arrive as strings. */
+  deals: Array<{
+    storeID: string;
+    dealID: string;
+    price: number;
+    retailPrice: number;
+    savings: number;
+  }>;
+  /** CheapShark's aggregated review blurb, e.g. "Overwhelmingly Positive". */
+  steamRatingText?: string | null;
+  /** Steam review score percentage when known. */
+  steamRatingPercent?: string | null;
+  /** Metacritic score when known. */
+  metacriticScore?: string | null;
+}
+
+/**
+ * Fetch full metadata for a single game by its CheapShark gameID:
+ * title, thumbnail, cheapest historical price, per-store offers and
+ * review information.
+ */
+export async function getGameInfo(gameID: string, signal?: AbortSignal): Promise<GameInfo> {
+  const url = buildUrl('/games', { id: gameID });
+  const raw = await request<Record<string, unknown>>(url, signal);
+  const info = raw['info'];
+  if (!info || typeof info !== 'object') {
+    throw new CheapSharkError('Unexpected CheapShark /games?id payload shape');
+  }
+  const rawDeals = Array.isArray(raw['deals']) ? raw['deals'] : [];
+  return {
+    info: info as GameInfo['info'],
+    deals: rawDeals.map((entry) => {
+      const record = entry as Record<string, unknown>;
+      return {
+        storeID: String(record['storeID'] ?? ''),
+        dealID: String(record['dealID'] ?? ''),
+        price: Number(record['price']),
+        retailPrice: Number(record['retailPrice']),
+        savings: Number(record['savings']),
+      };
+    }),
+    ...(typeof raw['steamRatingText'] === 'string' ? { steamRatingText: raw['steamRatingText'] as string } : {}),
+    ...(raw['steamRatingText'] === null ? { steamRatingText: null } : {}),
+    ...(typeof raw['steamRatingPercent'] === 'string' ? { steamRatingPercent: raw['steamRatingPercent'] as string } : {}),
+    ...(typeof raw['metacriticScore'] === 'string' ? { metacriticScore: raw['metacriticScore'] as string } : {}),
+  };
+}
+
 /** List all stores with their active status and image assets. */
 export async function getStores(signal?: AbortSignal): Promise<Store[]> {
   const url = buildUrl('/stores', {});

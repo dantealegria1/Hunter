@@ -25,6 +25,9 @@ describe('BacklogManager', () => {
     fireEvent.change(screen.getByPlaceholderText('Game title'), { target: { value: 'Hollow Knight' } })
     fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '25' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText(/hours to beat/i), { target: { value: '25' } })
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
     await waitFor(() => expect(onAdd).toHaveBeenCalledTimes(1))
     const call = onAdd.mock.calls[0]?.[0] as BacklogEntry
     expect(call.title).toBe('Hollow Knight')
@@ -90,8 +93,12 @@ describe('DealRadar', () => {
     render(<DealRadar onAddToBacklog={onAdd} />)
     await waitFor(() => expect(screen.getByText('Celeste')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Add Celeste to backlog' }))
+    // Every add routes through the duration prompt modal first.
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    expect(dialog).toHaveTextContent('Estimated playtime')
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
     expect(onAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'cs-d1', title: 'Celeste', priority: 'high' }),
+      expect.objectContaining({ id: 'cs-d1', title: 'Celeste', priority: 'high', hoursToBeat: 20 }),
     )
     vi.restoreAllMocks()
   })

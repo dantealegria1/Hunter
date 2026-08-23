@@ -54,8 +54,10 @@ describe('App dashboard integration', () => {
     fireEvent.change(screen.getByPlaceholderText('Game title'), { target: { value: 'Celeste' } })
     fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '20' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
 
-    await waitFor(() => expect(screen.getByText('Backlog (1)')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/backlog \(1\)/i)).toBeInTheDocument())
     expect(screen.getAllByText('Celeste').length).toBeGreaterThan(0)
     // Roadmap now shows a scheduled row instead of its empty state
     await waitFor(() =>
@@ -70,6 +72,8 @@ describe('App dashboard integration', () => {
     render(<App />)
     await waitFor(() => expect(screen.getByText('Hades')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Add Hades to backlog' }))
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
 
     expect(screen.getByText('Backlog (1)')).toBeInTheDocument()
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
@@ -81,7 +85,12 @@ describe('App dashboard integration', () => {
     await waitFor(() => expect(screen.getByText('Portal')).toBeInTheDocument())
     const button = screen.getByRole('button', { name: 'Add Portal to backlog' })
     fireEvent.click(button)
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     fireEvent.click(button)
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
     expect(screen.getByText('Backlog (1)')).toBeInTheDocument()
   })
 
@@ -90,6 +99,8 @@ describe('App dashboard integration', () => {
     fireEvent.change(screen.getByPlaceholderText('Game title'), { target: { value: 'Celeste' } })
     fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '20' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }))
     await waitFor(() => expect(screen.getByText('Backlog (1)')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Celeste' }))
