@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+/* Class-based dark mode (`<html class="dark">`) instead of media query,
+   so the in-app toggle controls the theme explicitly. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, -apple-system,
+    "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth cross-fade when toggling light/dark. Applied on the root wrapper
+   rather than * to avoid janky transitions on transform/opacity animations. */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    color 300ms ease;
+}
+
+/* Frosted-glass card used across all dashboard views. */
+.glass-card {
+  @apply rounded-2xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur-md;
+  @apply dark:border-slate-800 dark:bg-slate-900/70;
+}
+
+/* Refined range slider (Roadmap hours-per-week control). */
+input[type="range"].slider {
+  @apply h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 outline-none;
+  @apply dark:bg-slate-800;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  @apply h-5 w-5 appearance-none rounded-full border-2 border-white bg-indigo-600 shadow-md;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+input[type="range"].slider::-moz-range-thumb {
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid white;
+  background: var(--color-indigo-600);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+input[type="range"].slider:focus-visible {
+  outline: 2px solid var(--color-indigo-500);
+  outline-offset: 2px;
+}

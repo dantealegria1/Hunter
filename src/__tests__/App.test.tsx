@@ -52,10 +52,10 @@ describe('App dashboard integration', () => {
     expect(screen.getByText(/no games in your backlog/i)).toBeInTheDocument()
 
     fireEvent.change(screen.getByPlaceholderText('Game title'), { target: { value: 'Celeste' } })
-    fireEvent.change(screen.getByPlaceholderText('e.g. 20'), { target: { value: '20' } })
+    fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '20' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
 
-    expect(screen.getByText('Backlog (1)')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Backlog (1)')).toBeInTheDocument())
     expect(screen.getAllByText('Celeste').length).toBeGreaterThan(0)
     // Roadmap now shows a scheduled row instead of its empty state
     await waitFor(() =>
@@ -73,7 +73,7 @@ describe('App dashboard integration', () => {
 
     expect(screen.getByText('Backlog (1)')).toBeInTheDocument()
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
-    expect(stored.entries?.[0]).toMatchObject({ id: 'deal-d1', title: 'Hades' })
+    expect(stored.entries?.[0]).toMatchObject({ id: 'cs-d1', title: 'Hades' })
   })
 
   it('does not duplicate an entry when adding the same deal twice', async () => {
@@ -88,9 +88,9 @@ describe('App dashboard integration', () => {
   it('removing a game clears it from the backlog and storage', async () => {
     render(<App />)
     fireEvent.change(screen.getByPlaceholderText('Game title'), { target: { value: 'Celeste' } })
-    fireEvent.change(screen.getByPlaceholderText('e.g. 20'), { target: { value: '20' } })
+    fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '20' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
-    expect(screen.getByText('Backlog (1)')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Backlog (1)')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Celeste' }))
     expect(screen.getByText('Backlog (0)')).toBeInTheDocument()

@@ -24,6 +24,8 @@ export interface BacklogEntry {
   /** Estimated hours required to finish (or "complete") the game. */
   hoursToBeat: number;
   priority: Priority;
+  /** Official cover art URL (fetched from RAWG), when known. */
+  coverImage?: string;
   /** Hours already invested; reduces remaining work. */
   hoursPlayed?: number;
 }

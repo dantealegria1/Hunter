@@ -19,24 +19,24 @@ describe('BacklogManager', () => {
     expect(screen.getAllByText('high').length).toBeGreaterThan(0)
   })
 
-  it('adds a valid entry via the form', () => {
+  it('adds a valid entry via the form', async () => {
     const onAdd = vi.fn()
     render(<BacklogManager entries={[]} onAdd={onAdd} onRemove={() => {}} />)
     fireEvent.change(screen.getByPlaceholderText('Game title'), { target: { value: 'Hollow Knight' } })
-    fireEvent.change(screen.getByPlaceholderText('e.g. 20'), { target: { value: '25' } })
+    fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '25' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
-    expect(onAdd).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onAdd).toHaveBeenCalledTimes(1))
     const call = onAdd.mock.calls[0]?.[0] as BacklogEntry
     expect(call.title).toBe('Hollow Knight')
     expect(call.hoursToBeat).toBe(25)
     expect(call.priority).toBe('medium')
   })
 
-  it('shows a validation error for missing title', () => {
+  it('shows a validation error for missing title', async () => {
     render(<BacklogManager entries={[]} onAdd={() => {}} onRemove={() => {}} />)
-    fireEvent.change(screen.getByPlaceholderText('e.g. 20'), { target: { value: '25' } })
+    fireEvent.change(screen.getByPlaceholderText('auto (RAWG)'), { target: { value: '25' } })
     fireEvent.click(screen.getByRole('button', { name: /add game/i }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Title is required')
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Title is required'))
   })
 
   it('removes an entry', () => {
@@ -91,7 +91,7 @@ describe('DealRadar', () => {
     await waitFor(() => expect(screen.getByText('Celeste')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Add Celeste to backlog' }))
     expect(onAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'deal-d1', title: 'Celeste', priority: 'high' }),
+      expect.objectContaining({ id: 'cs-d1', title: 'Celeste', priority: 'high' }),
     )
     vi.restoreAllMocks()
   })

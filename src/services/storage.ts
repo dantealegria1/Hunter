@@ -60,6 +60,11 @@ function parseEntry(value: unknown): BacklogEntry | null {
     return null;
   }
   if (hoursPlayed !== undefined) entry.hoursPlayed = hoursPlayed;
+  const coverImage = value.coverImage;
+  if (coverImage !== undefined) {
+    if (typeof coverImage !== 'string' || coverImage.length === 0) return null;
+    entry.coverImage = coverImage;
+  }
   return entry;
 }
 
