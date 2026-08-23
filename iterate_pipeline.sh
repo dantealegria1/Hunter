@@ -1,4 +1,3 @@
-cat << 'EOF' > iterate_pipeline.sh
 #!/usr/bin/env bash
 set -e
 
@@ -66,6 +65,3 @@ echo ""
 echo "===================================================="
 echo " 🎉 Proyecto completado y subido a Hunter.git"
 echo "===================================================="
-EOF
-
-chmod +x iterate_pipeline.sh
