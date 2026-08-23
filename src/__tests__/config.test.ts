@@ -32,6 +32,12 @@ describe('TASK-06: GitHub Pages configuration', () => {
     expect(upload).toContain('path: dist');
   });
 
+  it('workflow enables Pages when configuring deployment', () => {
+    const yml = readRepoFile('.github/workflows/deploy.yml');
+    const configure = yml.slice(yml.indexOf('configure-pages'));
+    expect(configure).toContain('enablement: true');
+  });
+
   it('vite build outputs to the uploaded directory', async () => {
     // Build programmatically into an isolated outDir so the test does not
     // depend on a prior `npm run build` having produced ./dist.
